@@ -1,0 +1,472 @@
+Practical 1: Fibonacci Series
+
+
+#include <iostream>
+using namespace std;
+
+// Recursive Fibonacci function
+int recursiveFibonacci(int n) {
+    if (n <= 1)
+        return n;
+    else
+        return recursiveFibonacci(n - 1) + recursiveFibonacci(n - 2);
+}
+
+// Non-recursive (iterative) Fibonacci function
+void nonRecursiveFibonacci(int n) {
+    int first = 0, second = 1, third;
+    
+    cout << first << endl;
+    cout << second << endl;
+
+    while (n - 2 > 0) {
+        third = first + second;
+        first = second;
+        second = third;
+        cout << third << endl;
+        n--;
+    }
+}
+
+int main() {
+    int n = 10;
+
+    cout << "Recursive Fibonacci Series:" << endl;
+    for (int i = 0; i < n; i++) {
+        cout << recursiveFibonacci(i) << endl;
+    }
+
+    cout << "\nNon-Recursive Fibonacci Series:" << endl;
+    nonRecursiveFibonacci(n);
+
+    return 0;
+}
+
+
+Practical 2: Huffman Encoding
+
+
+#include <iostream>
+#include <queue>
+#include <vector>
+#include <string>
+using namespace std;
+
+// Node class for Huffman Tree
+class Node {
+public:
+    char ch;
+    int freq;
+    Node *left, *right;
+
+    Node(char ch, int freq) {
+        this->ch = ch;
+        this->freq = freq;
+        left = right = nullptr;
+    }
+};
+
+// Compare class for priority queue (min-heap)
+class Compare {
+public:
+    bool operator()(Node* a, Node* b) {
+        return a->freq > b->freq; // min-heap based on frequency
+    }
+};
+
+
+
+// Recursive function to print Huffman Codes
+void printCodes(Node* root, string str) {
+    if (!root)
+        return;
+
+    // Leaf node condition (no left and right child)
+    if (!root->left && !root->right) {
+        cout << root->ch << " : " << str << endl;
+        return;
+    }
+
+    printCodes(root->left, str + "0");
+    printCodes(root->right, str + "1");
+}
+
+// Function to build Huffman Tree and print codes
+void huffmanEncoding(char chars[], int freq[], int n) {
+    priority_queue<Node*, vector<Node*>, Compare> minHeap;
+
+    // Step 1: Create leaf nodes and add to min-heap
+    for (int i = 0; i < n; i++) {
+        minHeap.push(new Node(chars[i], freq[i]));
+    }
+
+    // Step 2: Build the Huffman Tree
+    while (minHeap.size() > 1) {
+        Node* left = minHeap.top(); minHeap.pop();
+        Node* right = minHeap.top(); minHeap.pop();
+
+        Node* newNode = new Node('$', left->freq + right->freq);
+        newNode->left = left;
+        newNode->right = right;
+
+        minHeap.push(newNode);
+    }
+
+    // Step 3: Root of Huffman Tree
+    Node* root = minHeap.top();
+
+    // Step 4: Print Huffman Codes
+    cout << "Huffman Codes:\n";
+    printCodes(root, "");
+}
+
+// Main function
+int main() {
+    char arr[] = {'A', 'B', 'C', 'D', 'E', 'F'};
+    int freq[] = {5, 9, 12, 13, 16, 45};
+    int n = sizeof(arr) / sizeof(arr[0]);
+
+    huffmanEncoding(arr, freq, n);
+    return 0;
+}
+
+
+
+Practical 3: Fractional knapsack
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+// Class representing an item
+class Item {
+public:
+    int value;
+    int weight;
+
+    Item(int value, int weight) {
+        this->value = value;
+        this->weight = weight;
+    }
+};
+
+// Comparator function to sort by value/weight ratio
+bool compare(Item a, Item b) {
+    double r1 = (double)a.value / a.weight;
+    double r2 = (double)b.value / b.weight;
+    return r1 > r2;  // Sort in descending order
+}
+
+// Function to calculate maximum value for fractional knapsack
+double fractionalKnapsack(int capacity, int value[], int weight[], int n) {
+    vector<Item> items;
+
+    // Step 1: Create Item objects from arrays
+    for (int i = 0; i < n; i++) {
+        items.push_back(Item(value[i], weight[i]));
+    }
+
+    // Step 2: Sort items by ratio
+    sort(items.begin(), items.end(), compare);
+
+    double totalValue = 0.0;  // Result value
+
+    // Step 3: Pick items greedily
+    for (int i = 0; i < n; i++) {
+        if (capacity == 0)
+            break;
+
+        if (items[i].weight <= capacity) {
+            // Take whole item
+            totalValue += items[i].value;
+            capacity -= items[i].weight;
+        } else {
+            // Take fraction of item
+            double fraction = (double)capacity / items[i].weight;
+            totalValue += items[i].value * fraction;
+            capacity = 0;
+        }
+    }
+
+    return totalValue;
+}
+
+int main() {
+    int value[] = {60, 100, 120};
+    int weight[] = {10, 20, 30};
+    int capacity = 50;
+    int n = sizeof(value) / sizeof(value[0]);
+
+    double maxValue = fractionalKnapsack(capacity, value, weight, n);
+
+    cout << "Maximum value in Knapsack = " << maxValue << endl;
+
+    return 0;
+}
+
+
+Practical 4: 0-1 Knapsack
+
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+// Recursive function with memoization
+int knapsack(int value[], int weight[], int n, int capacity, vector<vector<int>>& dp) {
+    // Base Case
+    if (n == 0 || capacity == 0)
+        return 0;
+
+    // If already computed, return stored result
+    if (dp[n][capacity] != -1)
+        return dp[n][capacity];
+
+    // If item is too heavy, skip it
+    if (weight[n - 1] > capacity) {
+        dp[n][capacity] = knapsack(value, weight, n - 1, capacity, dp);
+        return dp[n][capacity];
+    }
+
+    // Otherwise, consider both choices
+    int include = value[n - 1] + knapsack(value, weight, n - 1, capacity - weight[n - 1], dp);
+    int exclude = knapsack(value, weight, n - 1, capacity, dp);
+
+    // Store result in dp table
+    dp[n][capacity] = max(include, exclude);
+
+    // Return the stored result
+    return dp[n][capacity];
+}
+
+int main() {
+    int value[] = {60, 100, 120};
+    int weight[] = {10, 20, 30};
+    int capacity = 50;
+    int n = sizeof(value) / sizeof(value[0]);
+
+    // Initialize dp array with -1
+    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, -1));
+
+    int maxValue = knapsack(value, weight, n, capacity, dp);
+
+    cout << "Maximum value in 0-1 Knapsack = " << maxValue << endl;
+
+    return 0;
+}
+
+
+Practical 5: Nqueen 
+
+
+
+#include <iostream>
+#include <vector>
+using namespace std;
+
+bool isSafe(vector<vector<string>>& board, int row, int col) {
+    int n = board.size();
+
+    // Check column
+    for (int i = row - 1; i >= 0; i--) {
+        if (board[i][col] == "Q")
+            return false;
+    }
+
+    // Check upper left diagonal
+    for (int i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--) {
+        if (board[i][j] == "Q")
+            return false;
+    }
+
+    // Check upper right diagonal
+    for (int i = row - 1, j = col + 1; i >= 0 && j < n; i--, j++) {
+        if (board[i][j] == "Q")
+            return false;
+    }
+
+    return true;
+}
+
+
+void printBoard(vector<vector<string>>& board) {
+    int n = board.size();
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            cout << board[i][j] << "   ";
+        }
+        cout << endl;
+    }
+    cout << endl;
+}
+
+void nQueen(vector<vector<string>>& board, int row) {
+    int n = board.size();
+
+    // Base case: all queens placed
+    if (row == n) {
+        printBoard(board);
+        return;
+    }
+
+    for (int col = 0; col < n; col++) {
+        if (isSafe(board, row, col)) {
+            board[row][col] = "Q";
+            nQueen(board, row + 1);
+            board[row][col] = "."; // Backtrack
+        }
+    }
+}
+
+
+
+int main() {
+    int n = 4;
+    vector<vector<string>> board(n, vector<string>(n, "."));
+
+    nQueen(board, 0);
+
+    return 0;
+}
+
+
+Practical 6: Quick Sort
+
+
+
+
+#include <iostream>
+#include <cstdlib>
+#include <ctime>
+using namespace std;
+
+
+
+
+
+
+// ---------------------------
+// Partition (Pivot from start)
+// ---------------------------
+int partition(int arr[], int low, int high) {
+    int pivot = arr[low];          // choose first element as pivot
+    int count = 0;
+
+    // Step 1: Count elements smaller than pivot
+    for (int i = low + 1; i <= high; i++) {
+        if (arr[i] < pivot)
+            count++;
+    }
+
+    // Step 2: Find pivot’s correct index
+    int pivotIndex = low + count;
+    swap(arr[pivotIndex], arr[low]);
+
+    // Step 3: Arrange elements on left and right using two pointers
+    int i = low, j = high;
+    while (i < pivotIndex && j > pivotIndex) {
+        while (arr[i] < pivot)
+            i++;
+        while (arr[j] >= pivot)
+            j--;
+        if (i < pivotIndex && j > pivotIndex)
+            swap(arr[i++], arr[j--]);
+    }
+
+    // Step 4: Return pivot’s final index
+    return pivotIndex;
+}
+
+// ---------------------------
+// Randomized Partition
+// ---------------------------
+int randomPartition(int arr[], int low, int high) {
+    int randomPivot = low + rand() % (high - low + 1);
+    swap(arr[randomPivot], arr[low]);  // swap random element with first
+    return partition(arr, low, high);
+}
+
+// ---------------------------
+// Deterministic Quick Sort
+// ---------------------------
+void quickSortDeterministic(int arr[], int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSortDeterministic(arr, low, pi - 1);
+        quickSortDeterministic(arr, pi + 1, high);
+    }
+}
+
+// ---------------------------
+// Randomized (Non-Deterministic) Quick Sort
+// ---------------------------
+void quickSortRandomized(int arr[], int low, int high) {
+    if (low < high) {
+        int pi = randomPartition(arr, low, high);
+        quickSortRandomized(arr, low, pi - 1);
+        quickSortRandomized(arr, pi + 1, high);
+    }
+}
+
+// ---------------------------
+// Utility: Print Array
+// ---------------------------
+void printArray(int arr[], int n) {
+    for (int i = 0; i < n; i++)
+        cout << arr[i] << " ";
+    cout << endl;
+}
+
+// ---------------------------
+// Main Function
+// ---------------------------
+int main() {
+    srand(time(0));
+
+    int n;
+    cout << "Enter number of elements: ";
+    cin >> n;
+
+    int arr1[n], arr2[n];
+    cout << "Enter array elements: ";
+    for (int i = 0; i < n; i++) {
+        cin >> arr1[i];
+        arr2[i] = arr1[i];
+    }
+
+
+
+
+
+    clock_t start, end;
+
+    // Deterministic Quick Sort
+    start = clock();
+    quickSortDeterministic(arr1, 0, n - 1);
+    end = clock();
+    double timeDet = double(end - start) / CLOCKS_PER_SEC;
+
+    // Randomized Quick Sort
+    start = clock();
+    quickSortRandomized(arr2, 0, n - 1);
+    end = clock();
+    double timeRand = double(end - start) / CLOCKS_PER_SEC;
+
+    cout << "\nSorted Array (Deterministic): ";
+    printArray(arr1, n);
+    cout << "Time taken (Deterministic): " << timeDet << " seconds\n";
+
+    cout << "\nSorted Array (Randomized): ";
+    printArray(arr2, n);
+    cout << "Time taken (Randomized): " << timeRand << " seconds\n";
+
+    return 0;
+}
+
+
+
+
+
